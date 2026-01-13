@@ -1,11 +1,11 @@
 /**
-    @name: Greater
-    @title: Greater objeserver
+    @name: Greeter
+    @title: Greeter objeserver
     @author: Zai Dium
     @version: 1
-    @revision: 70
-    @localfile: ?defaultpath\Greater\?@name.lsl
-    @updated: "2026-01-13 18:23:03"
+    @revision: 72
+    @localfile: ?defaultpath\Greeter\?@name.lsl
+    @updated: "2026-01-13 19:40:39"
     @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 
     @resources:
@@ -26,7 +26,7 @@ string give = "";
 updateText()
 {
     if (show_text)
-        llSetText("Greater "+version, <1,1,1>, 1);
+        llSetText("Greeter "+version, <1,1,1>, 1);
     else
         llSetText("", ZERO_VECTOR, 1);
 }

@@ -1,11 +1,11 @@
 /**
     @name: RegionObserver
-    @title: Greater objeserver
+    @title: Greeter objeserver
     @author: Zai Dium
     @version: 1
-    @revision: 82
-    @localfile: ?defaultpath\Greater\?@name.lsl
-    @updated: "2026-01-13 18:55:05"
+    @revision: 83
+    @localfile: ?defaultpath\Greeter\?@name.lsl
+    @updated: "2026-01-13 19:40:54"
     @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 */
 integer parcel = FALSE;
