@@ -3,9 +3,9 @@
     @title: Greater objeserver
     @author: Zai Dium
     @version: 1
-    @revision: 61
+    @revision: 79
     @localfile: ?defaultpath\Greater\?@name.lsl
-    @updated: "2026-01-13 17:56:01"
+    @updated: "2026-01-13 18:23:14"
     @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 */
 integer parcel = FALSE;
@@ -65,8 +65,7 @@ default
     state_entry()
     {
         llSetTimerEvent(interval);
-//        llLinksetDataReset();
-        check();
+        //llLinksetDataReset();
     }
 
     on_rez(integer number)
@@ -83,7 +82,9 @@ default
 
     link_message( integer sender_link, integer number, string message, key id )
     {
-        if (message == "parcel")
+        if (message == "check")
+            check();
+        else if (message == "parcel")
             parcel = number;
         else if (message == "every")
             every = number;

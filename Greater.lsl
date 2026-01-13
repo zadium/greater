@@ -3,9 +3,9 @@
     @title: Greater objeserver
     @author: Zai Dium
     @version: 1
-    @revision: 58
+    @revision: 70
     @localfile: ?defaultpath\Greater\?@name.lsl
-    @updated: "2026-01-13 17:58:12"
+    @updated: "2026-01-13 18:23:03"
     @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 
     @resources:
@@ -100,7 +100,6 @@ default
 {
     state_entry()
     {
-        reset();
         readConfig();
     }
 
@@ -116,12 +115,12 @@ default
 
         if (message == "income")
         {
-            if (shoutMessage != "")
-                llShout(0, replace(shoutMessage, id));
-            if (sayMessage != "")
-                llSay(0, replace(sayMessage, id));
             if (welcomeMessage != "")
                 llRegionSayTo(id, 0, replace(welcomeMessage, id));
+            if (sayMessage != "")
+                llSay(0, replace(sayMessage, id));
+            if (shoutMessage != "")
+                llShout(0, replace(shoutMessage, id));
             if (sound != "")
                 llPlaySound(sound, 1);
             if (give != "")
@@ -133,7 +132,7 @@ default
     {
         if (change & CHANGED_INVENTORY)
         {
-            llResetScript();
+            readConfig();
         }
     }
 
