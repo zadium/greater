@@ -3,9 +3,9 @@
     @title: Greater objeserver
     @author: Zai Dium
     @version: 1
-    @revision: 79
+    @revision: 82
     @localfile: ?defaultpath\Greater\?@name.lsl
-    @updated: "2026-01-13 18:23:14"
+    @updated: "2026-01-13 18:55:05"
     @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 */
 integer parcel = FALSE;
