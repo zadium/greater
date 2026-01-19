@@ -2,17 +2,19 @@
     @name: Greeter
     @title: Greeter objeserver
     @author: Zai Dium
-    @version: 1
-    @revision: 72
+    @version: 1.5
+    @revision: 145
     @localfile: ?defaultpath\Greeter\?@name.lsl
-    @updated: "2026-01-13 19:40:39"
+    @updated: "2026-01-19 16:59:04"
     @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 
     @resources:
 
         https://pixabay.com/sound-effects/search/ding%20dong/
 */
-string version = "1.0";
+string version = "1.5";
+//** Stamp Change it to erease data
+integer stamp = 0;
 integer show_text=TRUE;
 integer short_name = FALSE;
 //* use config
@@ -22,6 +24,9 @@ string sayMessage = "";
 string shoutMessage = "";
 string sound = "doorbell";
 string give = "";
+string rules = "";
+integer accept_timeout = 120; //* 2 minutes
+integer interval = 30;
 
 updateText()
 {
@@ -40,7 +45,6 @@ readConfig()
     if (llGetInventoryKey(configName) != NULL_KEY)
     {
         reset();
-        llSetTimerEvent(0);
         nc_configLine = 0;
         nc_ConfigQueryID = llGetNotecardLine(configName, nc_configLine);
     }
@@ -68,6 +72,8 @@ string nameURI(key id)
 {
     if (id==NULL_KEY)
         return "NONE";
+    if (id=="")
+        return "UNKOWN";
     if (short_name)
         return getDisplayName(id);
     else
@@ -75,6 +81,7 @@ string nameURI(key id)
 }
 
 string parcelName = "";
+key parcelOwner = NULL_KEY;
 string regionName = "";
 string gridName = "";
 
@@ -82,6 +89,7 @@ string replace(string s, key id)
 {
     string result = osReplaceString(s, "`user`", nameURI(id), -1, 0);
     result = osReplaceString(result, "`owner`", nameURI(llGetOwner()), -1, 0);
+    result = osReplaceString(result, "`parcel_owner`", nameURI(parcelOwner), -1, 0);
     result = osReplaceString(result, "`region`", regionName, -1, 0);
     result = osReplaceString(result, "`sim`", regionName, -1, 0);
     result = osReplaceString(result, "`parcel`", parcelName, -1, 0);
@@ -91,16 +99,77 @@ string replace(string s, key id)
 
 reset()
 {
-    parcelName = llList2String(llGetParcelDetails(llGetPos(), [PARCEL_DETAILS_NAME]),0);
+    list details = llGetParcelDetails(llGetPos(), [PARCEL_DETAILS_NAME, PARCEL_COUNT_OWNER]);
+    parcelName = llList2String(details,0);
+    parcelOwner = llList2Key(details,1);
     regionName = llGetRegionName();
     gridName = osGetGridName();
+}
+
+list waiting_users = []; //* for TOS accept
+list waiting_users_times = []; //* user time start waiting
+
+addWaitingUser(key id)
+{
+    integer i = llListFindList(waiting_users, [id]);
+    if (i < 0)
+    {
+        waiting_users += id;
+        waiting_users_times += llGetUnixTime();
+    }
+}
+
+removeWaitingUser(key id)
+{
+    integer i = llListFindList(waiting_users, [id]);
+    if (i >= 0)
+    {
+        waiting_users = llDeleteSubList(waiting_users, i, i);
+        waiting_users_times = llDeleteSubList(waiting_users_times, i, i);
+    }
+}
+
+eject_user(key id)
+{
+    removeWaitingUser(id);
+    llInstantMessage(llGetOwner(), "User " + nameURI(id) + " ignored to accept rules");
+    if (llGetOwner() == parcelOwner)
+    {
+        llInstantMessage(id, "You ejected because you ignored to accept rules");
+        llEjectFromLand(id);
+    }
+    else
+        llInstantMessage(id, "Please leave because you ignored to accept rules");
+}
+
+integer rules_dialog_listen_id = -1;
+integer rules_dialog_channel = -1;
+
+ask(key id)
+{
+    //llListenRemove(dialog_listen_id); //* Nope we need to show it to multi users
+    if (llGetOwner() == id)
+        return;
+
+    string already = llLinksetDataRead("accepted."+(string)id); //* not accepted before
+    if (already=="")
+    {
+        addWaitingUser(id);
+        llDialog(id, "\n"+rules, ["Accept", "Reject"], rules_dialog_channel);
+        rules_dialog_listen_id = llListen(rules_dialog_channel, "", id, "");
+    }
 }
 
 default
 {
     state_entry()
     {
+        if ((integer)llLinksetDataRead("stamp")!=stamp)
+            llLinksetDataReset();
+        llLinksetDataWrite("stamp", (string)stamp);
+        rules_dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) ) + 1;
         readConfig();
+        llSetTimerEvent(interval);
     }
 
     on_rez(integer number)
@@ -113,7 +182,12 @@ default
         if (id == NULL_KEY)
             return;
 
-        if (message == "income")
+        if (message == "entered")
+        {
+            if (rules!="")
+                ask(id);
+        }
+        else if (message == "income")
         {
             if (welcomeMessage != "")
                 llRegionSayTo(id, 0, replace(welcomeMessage, id));
@@ -133,6 +207,19 @@ default
         if (change & CHANGED_INVENTORY)
         {
             readConfig();
+        }
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if (channel==rules_dialog_channel)
+        {
+            message = llToLower(message);
+            if (message=="accept")
+            {
+                llLinksetDataWrite("accepted."+(string)id, "true");
+                removeWaitingUser(id);
+            }
         }
     }
 
@@ -175,6 +262,10 @@ default
                             sound = data;
                         else if (name=="give")
                             give = data;
+                        else if (name=="rules")
+                            rules = osStringReplace(data, "\\n", "\n");
+                        else if (name=="accept_timeout")
+                            accept_timeout = (integer)data;
                         else if (name=="short_name")
                             short_name = toBool(data);
                         else if ((name=="parcel") || (name=="every"))
@@ -187,4 +278,32 @@ default
             }
         }
     }
+
+    timer()
+    {
+        //* Checking waiting users for accept
+        list eject_users = [];
+        integer c = llGetListLength(waiting_users);
+        integer i = 0;
+        while (i<c)
+        {
+            key user = llList2Key(waiting_users, i);
+            //llOwnerSay("to:"+(string)user);
+            integer time=llList2Integer(waiting_users_times, i);
+            if ((llGetUnixTime() - time) > accept_timeout)
+                eject_users += user;
+            i++;
+        }
+
+        c = llGetListLength(eject_users);
+        i = 0;
+        while (i<c)
+        {
+            key user = llList2Key(eject_users, i);
+            llOwnerSay("eject:" + (string)user);
+            eject_user(user);
+            i++;
+        }
+    }
+
  }

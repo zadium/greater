@@ -2,10 +2,10 @@
     @name: RegionObserver
     @title: Greeter objeserver
     @author: Zai Dium
-    @version: 1
-    @revision: 83
+    @version: 1.5
+    @revision: 113
     @localfile: ?defaultpath\Greeter\?@name.lsl
-    @updated: "2026-01-13 19:40:54"
+    @updated: "2026-01-19 16:59:09"
     @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 */
 integer parcel = FALSE;
@@ -49,9 +49,11 @@ check()
 
         if (llListFindList(exists, [user]) < 0) //* exists in the region
         {
+            llMessageLinked(LINK_SET, 0, "entered", user);
+            exists += [user];
+            //llOwnerSay((string)user);
             if ((last_visit == 0) || (delta > every)) //* a Day
             {
-                exists += [user];
                 llMessageLinked(LINK_SET, 0, "income", user);
                 llLinksetDataWrite("users."+(string)user, (string)t);
             }
